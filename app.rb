@@ -22,7 +22,7 @@ class Ishocon2::WebApp < Sinatra::Base
 
   helpers do
     def redis
-      @redis_con ||= Redis.new
+      @@redis_con ||= Redis.new
     end
     def config
       @config ||= {
