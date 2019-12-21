@@ -192,16 +192,15 @@ SQL
       return view
     end
 
-    params[:vote_count].to_i.times do
-      countup candidate[:id]
-      countup_user user[:id]
-      countup_keyword candidate[:id], params[:keyword]
-      countup_c_id candidate[:id]
-      countup_parties candidate[:political_party]
-      countup_sex candidate[:sex]
-      countup_rank_parties candidate[:political_party]
-      countup_rank_sex  candidate[:sex]
-    end
+    count = params[:vote_count].to_i
+    countup candidate[:id], count
+    countup_user user[:id], count
+    countup_keyword candidate[:id], params[:keyword], count
+    countup_c_id candidate[:id], count
+    countup_parties candidate[:political_party], count
+    countup_sex candidate[:sex], count
+    countup_rank_parties candidate[:political_party], count
+    countup_rank_sex  candidate[:sex], count
     return erb :vote, locals: { candidates: candidates, message: '投票に成功しました' }
   end
 
@@ -213,18 +212,18 @@ SQL
     @@candidates ||= db.query('SELECT name FROM candidates')
   end
 
-  def countup c_id
+  def countup c_id, count
     c_id = c_id.to_i
-    redis.incr(c_id)
+    redis.incrby c_id, count
   end
 
-  def fetch_count c_id
-    redis.get(c_id)
+  def fetch_count c_id, count
+    redis.incrby c_id, count
   end
 
-  def countup_user u_id
+  def countup_user u_id, count
     u_id = "u_#{u_id}"
-    redis.incr(u_id)
+    redis.incrby u_id, count
   end
 
   def fetch_count_user u_id
@@ -232,14 +231,14 @@ SQL
     redis.get(u_id)
   end
 
-  def countup_keyword c_id, keyword
+  def countup_keyword c_id, keyword, count
     key = "c_key_#{c_id}"
-    redis.zincrby key, 1, keyword
+    redis.zincrby key, count, keyword
   end
 
-  def countup_c_id c_id
+  def countup_c_id c_id, count
     key = "c_all_key"
-    redis.zincrby key, 1, c_id
+    redis.zincrby key, count, c_id
   end
 
   def fetch_top_c_id_top10
@@ -258,13 +257,14 @@ SQL
     db.xquery(query, all).first
   end
 
-  def countup_parties parties
+  def countup_parties parties, count
     key = "p_key_#{parties}"
-    redis.incr key
+    redis.incrby key, count
   end
-  def countup_sex sex
+  def countup_sex sex, count
     key = "s_key_#{sex}"
     redis.incr key
+    redis.incrby key, count
   end
   def get_parties parties
     key = "p_key_#{parties}"
@@ -274,13 +274,13 @@ SQL
     key = "s_key_#{parties}"
     redis.get key
   end
-  def countup_rank_parties parties
+  def countup_rank_parties parties, count
     key = "p_all_key"
-    redis.zincrby key, 1, parties
+    redis.zincrby key, count, parties
   end
-  def countup_rank_sex sex
+  def countup_rank_sex sex, count
     key = "s_all_key"
-    redis.zincrby key, 1, sex
+    redis.zincrby key, count, sex
   end
   def fetch_top_parties
     redis.zrevrange "p_all_key", 0, 100
