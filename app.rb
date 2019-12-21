@@ -76,6 +76,7 @@ SQL
     end
 
     def db_initialize
+      clear_nginx_cache
       memcache_flush
       db.query('DELETE FROM votes')
     end
@@ -89,6 +90,10 @@ SQL
       socket.write(command)
       result = socket.recv(2)
       socket.close
+    end
+
+    def clear_nginx_cache
+      system('rm -rf /var/cache/nginx/*')
     end
   end
 
