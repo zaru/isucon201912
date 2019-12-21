@@ -80,7 +80,7 @@ SQL
   end
 
   get '/' do
-    cache_control :public, :max_age => 86400
+    #cache_control :public, :max_age => 86400
     candidates = []
     results = election_results
     results.each_with_index do |r, i|
