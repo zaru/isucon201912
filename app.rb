@@ -69,21 +69,22 @@ SQL
     end
 
     def voice_of_supporter(candidate_ids)
-      total_keywords = {}
+      keys = []
       candidate_ids.each do |c_id|
-        keywords = fetch_keyword_count c_id
-        p keywords
+        keys << "c_key_#{c_id}"
       end
+      redis.zunionstore("c_ids_#{candidate_ids.join('-')}", keys)
+      return redis.zrevrange "c_ids_#{candidate_ids.join('-')}", 0, 9
       #OnMemory.instance.fetch_top10(candidate_ids)
-      query = <<SQL
-SELECT keyword
-FROM votes
-WHERE candidate_id IN (?)
-GROUP BY keyword
-ORDER BY COUNT(*) DESC
-LIMIT 10
-SQL
-      db.xquery(query, candidate_ids).map { |a| a[:keyword] }
+#      query = <<SQL
+#SELECT keyword
+#FROM votes
+#WHERE candidate_id IN (?)
+#GROUP BY keyword
+#ORDER BY COUNT(*) DESC
+#LIMIT 10
+#SQL
+#      db.xquery(query, candidate_ids).map { |a| a[:keyword] }
     end
 
     def db_initialize
@@ -244,11 +245,6 @@ SQL
   def countup_keyword c_id, keyword
     key = "c_key_#{c_id}"
     redis.zincrby key, 1, keyword
-  end
-
-  def fetch_keyword_count c_id
-    key = "c_key_#{c_id}"
-    redis.revrange key, 0, 9
   end
 end
 
