@@ -22,7 +22,10 @@ class Ishocon2::WebApp < Sinatra::Base
 
   helpers do
     def redis
-      @@redis_con ||= Redis.new
+      return Thread.current[:ishocon2_redis] if Thread.current[:ishocon2_redis]
+      client = Redis.new
+      Thread.current[:ishocon2_redis] = client
+      client
     end
     def config
       @config ||= {
