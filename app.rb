@@ -147,7 +147,7 @@ SQL
   post '/vote' do
     user = redis.get("user_#{params[:name]}#{params[:address]}#{params[:mynumber]}")
     if user.nil?
-      user = db.xquery('SELECT * FROM users WHERE  name = ? AND address = ? AND mynumber = ? limit 1',
+      user = db.xquery('SELECT * FROM users WHERE  name = ? AND address = ? AND mynumber = ?',
                        params[:name],
                        params[:address],
                        params[:mynumber]).first
