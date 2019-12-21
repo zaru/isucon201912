@@ -117,23 +117,44 @@ SQL
 
 
     top10_ids = fetch_top_c_id_top10
-    last_id = fetch_top_c_id_last
-      query = <<SQL
+
+    query = <<SQL
 SELECT id, name, political_party, sex
 FROM candidates
-WHERE candidate_id IN (?)
+WHERE id IN (?)
 SQL
-    c_users = db.xquery(query, top10_ids + last_id)
-    c_users.each_with_index do |val, index|
-      c_users[index][:count] = fetch_count(val[:id])
+    c_users = db.xquery(query, top10_ids)
+    users = []
+    c_users.each do |data|
+      users << data
     end
-    candidates = c_users
+    users.each_with_index do |val, index|
+      users[index][:count] = fetch_count(val[:id])
+    end
+
+    last_ids = fetch_top_c_id_last
+    query = <<SQL
+SELECT id, name, political_party, sex
+FROM candidates
+WHERE id IN (?)
+SQL
+    c_users = db.xquery(query, last_ids)
+    users = []
+    c_users.each do |data|
+      users << data
+    end
+    p users
+    users.each_with_index do |val, index|
+      users[index][:count] = fetch_count(val[:id])
+    end
+
+    candidates = users
 
     results = election_results
-    #results.each_with_index do |r, i|
-    #  # 上位10人と最下位のみ表示
-    #  candidates.push(r) if i < 10 || 28 < i
-    #end
+    results.each_with_index do |r, i|
+      # 上位10人と最下位のみ表示
+      candidates.push(r) if i < 10 || 28 < i
+    end
 
     parties_set = db.query('SELECT political_party FROM candidates GROUP BY political_party')
     parties = {}
@@ -263,7 +284,7 @@ SQL
     redis.zincrby key, 1, keyword
   end
 
-  def countup_c_id
+  def countup_c_id c_id
     key = "c_all_key"
     redis.zincrby key, 1, c_id
   end
@@ -273,7 +294,7 @@ SQL
   end
 
   def fetch_top_c_id_last
-    redis.zrevrange "c_all_key", -1, 1
+    redis.zrevrange "c_all_key", -1, 9
   end
 end
 
