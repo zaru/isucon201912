@@ -90,7 +90,7 @@ SQL
     def db_initialize
       clear_nginx_cache
       memcache_flush
-      db.query('DELETE FROM votes')
+      #db.query('DELETE FROM votes')
       OnMemory.instance.clear
       redis.flushdb
     end
@@ -248,10 +248,10 @@ SQL
       countup_sex candidate[:sex]
       countup_rank_parties candidate[:political_party]
       countup_rank_sex  candidate[:sex]
-      result = db.xquery('INSERT INTO votes (user_id, candidate_id, keyword) VALUES (?, ?, ?)',
-                user[:id],
-                candidate[:id],
-                params[:keyword])
+      #result = db.xquery('INSERT INTO votes (user_id, candidate_id, keyword) VALUES (?, ?, ?)',
+      #          user[:id],
+      #          candidate[:id],
+      #          params[:keyword])
     end
     return erb :vote, locals: { candidates: candidates, message: '投票に成功しました' }
   end
