@@ -129,7 +129,7 @@ SQL
   end
 
   post '/vote' do
-    user = db.xquery('SELECT id FROM users WHERE name = ? AND address = ? AND mynumber = ?',
+    user = db.xquery('SELECT * FROM users WHERE name = ? AND address = ? AND mynumber = ?',
                      params[:name],
                      params[:address],
                      params[:mynumber]).first
