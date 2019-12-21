@@ -86,6 +86,7 @@ SQL
       memcache_flush
       db.query('DELETE FROM votes')
       OnMemory.instance.clear
+      redis.flushdb
     end
 
     def memcache_flush
