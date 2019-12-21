@@ -22,9 +22,11 @@ class Ishocon2::WebApp < Sinatra::Base
   options = { :namespace => "app_v1", :compress => true }
   dc = Dalli::Client.new('localhost:11211', options)
 
-  redis = Redis.new
 
   helpers do
+    def resid
+      @redis_con ||= Redis.new
+    end
     def config
       @config ||= {
         db: {
