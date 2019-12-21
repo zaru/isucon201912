@@ -133,23 +133,26 @@ SQL
     end
     users.sort_by! { |a| a[:count] }.reverse!
 
-    last_ids = fetch_top_c_id_last
-    query = <<SQL
-SELECT id, name, political_party, sex
-FROM candidates
-WHERE id IN (?)
-SQL
-    c_users = db.xquery(query, last_ids)
-    last_users = []
-    c_users.each do |data|
-      last_users << data
-    end
-    last_users.each_with_index do |val, index|
-      last_users[index][:count] = fetch_count(val[:id])
-    end
-    last_users.sort_by! { |a| a[:count] }
+#    last_ids = fetch_top_c_id_last
+#    last_users = []
+#    if last_ids.size > 0
+#    query = <<SQL
+#SELECT id, name, political_party, sex
+#FROM candidates
+#WHERE id IN (?)
+#SQL
+#    c_users = db.xquery(query, last_ids)
+#    c_users.each do |data|
+#      last_users << data
+#    end
+#    last_users.each_with_index do |val, index|
+#      last_users[index][:count] = fetch_count(val[:id])
+#    end
+#    last_users.sort_by! { |a| a[:count] }.reverse!
+#    end
+#
 
-    candidates = users + last_users
+    candidates = users + fetch_top_c_id_last
     results = election_results
     results.each_with_index do |r, i|
       # 上位10人と最下位のみ表示
@@ -294,7 +297,15 @@ SQL
   end
 
   def fetch_top_c_id_last
-    redis.zrevrange "c_all_key", -1, 9
+    all = redis.zrevrange("c_all_key", 0, 99999)
+    query = <<SQL
+SELECT id, name, political_party, sex
+FROM candidates
+WHERE id NOT IN (?)
+order by id asc
+limit 1
+SQL
+    db.xquery(query, all).first
   end
 end
 
