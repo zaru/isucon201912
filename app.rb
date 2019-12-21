@@ -154,8 +154,9 @@ SQL
                        params[:name],
                        params[:address],
                        params[:mynumber]).first
-
-      redis.set("user_#{params[:name]}#{params[:address]}#{params[:mynumber]}", user.to_json)
+      unless user.nil?
+        redis.set("user_#{params[:name]}#{params[:address]}#{params[:mynumber]}", user.to_json)
+      end
     else
       user = JSON.parse(user).with_indifferent_access
     end
@@ -164,7 +165,9 @@ SQL
     candidate = redis.get("candidate_fetch_#{params[:candidate]}")
     if candidate.nil? || candidate.empty?
       candidate = db.xquery('SELECT * FROM candidates WHERE name = ? limit 1', params[:candidate]).first
-      redis.set("candidate_fetch_#{params[:candidate]}", candidate.to_json)
+      unless candidate.nil?
+        redis.set("candidate_fetch_#{params[:candidate]}", candidate.to_json)
+      end
     else
       candidate = JSON.parse(candidate).with_indifferent_access
     end
