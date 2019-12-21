@@ -207,7 +207,7 @@ SQL
                      params[:address],
                      params[:mynumber]).first
     #TODO: ここ id で fetch できないかな？
-    candidate = db.xquery('SELECT * FROM candidates WHERE name = ?', params[:candidate]).first
+    candidate = db.xquery('SELECT * FROM candidates WHERE name = ? limit 1', params[:candidate]).first
 
     voted_count = user.nil? ? 0 : fetch_count_user(user[:id])
     voted_count = 0 if voted_count.nil?
