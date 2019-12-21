@@ -76,7 +76,8 @@ SQL
 
   get '/' do
     candidates = []
-    election_results.each_with_index do |r, i|
+    results = election_results
+    results.each_with_index do |r, i|
       # 上位10人と最下位のみ表示
       candidates.push(r) if i < 10 || 28 < i
     end
@@ -84,12 +85,12 @@ SQL
     parties_set = db.query('SELECT political_party FROM candidates GROUP BY political_party')
     parties = {}
     parties_set.each { |a| parties[a[:political_party]] = 0 }
-    election_results.each do |r|
+    results.each do |r|
       parties[r[:political_party]] += r[:count] || 0
     end
 
     sex_ratio = { '男': 0, '女': 0 }
-    election_results.each do |r|
+    results.each do |r|
       sex_ratio[r[:sex].to_sym] += r[:count] || 0
     end
 
@@ -113,7 +114,7 @@ SQL
     election_results.each do |r|
       votes += r[:count] || 0 if r[:political_party] == params[:name]
     end
-    candidates = db.xquery('SELECT * FROM candidates WHERE political_party = ?', params[:name])
+    candidates = db.xquery('SELECT id, name FROM candidates WHERE political_party = ?', params[:name])
     candidate_ids = candidates.map { |c| c[:id] }
     keywords = voice_of_supporter(candidate_ids)
     erb :political_party, locals: { political_party: params[:name],
