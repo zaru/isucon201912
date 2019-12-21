@@ -151,14 +151,19 @@ SQL
                        params[:name],
                        params[:address],
                        params[:mynumber]).first
-      redis.set("user_#{params[:name]}#{params[:address]}#{params[:mynumber]}", user)
+
+      redis.set("user_#{params[:name]}#{params[:address]}#{params[:mynumber]}", Marshal.dump(user))
+    else
+      user = Marshal.load(user)
     end
 
     #TODO: ここ id で fetch できないかな？
     candidate = redis.get("candidate_fetch_#{params[:candidate]}")
     if candidate.nil? || candidate.empty?
       candidate = db.xquery('SELECT * FROM candidates WHERE name = ? limit 1', params[:candidate]).first
-      redis.set("candidate_fetch_#{params[:candidate]}", candidate)
+      redis.set("candidate_fetch_#{params[:candidate]}", Marshal.dump(candidate))
+    else
+      candidate = Marshal.load(candidate)
     end
 
     voted_count = user.nil? ? 0 : fetch_count_user(user[:id])
