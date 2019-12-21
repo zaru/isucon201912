@@ -182,7 +182,7 @@ SQL
     #TODO: ここ id で fetch できないかな？
     candidate = db.xquery('SELECT * FROM candidates WHERE name = ?', params[:candidate]).first
 
-    voted_count = fetch_count_user user[:id]
+    voted_count = user.nil? ? 0 : fetch_count_user(user[:id])
     voted_count = 0 if voted_count.nil?
     #voted_count =
     #  user.nil? ? 0 : db.xquery('SELECT COUNT(id) AS count FROM votes WHERE user_id = ?', user[:id]).first[:count]
