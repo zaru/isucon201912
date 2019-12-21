@@ -263,7 +263,6 @@ SQL
   end
   def countup_sex sex, count
     key = "s_key_#{sex}"
-    redis.incr key
     redis.incrby key, count
   end
   def get_parties parties
