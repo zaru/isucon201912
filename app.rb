@@ -5,6 +5,7 @@ require 'mysql2-cs-bind'
 require 'erubis'
 require 'dalli'
 require 'socket'
+require "redis"
 
 module Ishocon2
   class AuthenticationError < StandardError; end
@@ -20,6 +21,8 @@ class Ishocon2::WebApp < Sinatra::Base
 
   options = { :namespace => "app_v1", :compress => true }
   dc = Dalli::Client.new('localhost:11211', options)
+
+  redis = Redis.new
 
   helpers do
     def config
@@ -136,7 +139,8 @@ SQL
 
     votes = dc.get("candidate_votes_#{params[:id]}")
     if votes.nil?
-      votes = OnMemory.instance.fetch_vote_count params[:id]
+      #votes = OnMemory.instance.fetch_vote_count params[:id]
+      votes = fetch_count params[:id]
       #votes = db.xquery('SELECT COUNT(candidate_id) AS count FROM votes WHERE candidate_id = ?', params[:id]).first[:count]
       dc.set("candidate_votes_#{params[:id]}", votes)
     end
@@ -193,6 +197,7 @@ SQL
 
     params[:vote_count].to_i.times do
       OnMemory.instance.add user[:id], candidate[:id], params[:keyword]
+      countup candidate[:id]
       result = db.xquery('INSERT INTO votes (user_id, candidate_id, keyword) VALUES (?, ?, ?)',
                 user[:id],
                 candidate[:id],
@@ -203,6 +208,15 @@ SQL
 
   get '/initialize' do
     db_initialize
+  end
+
+  def countup c_id
+    c_id = c_id.to_i
+    redis.incr(c_id)
+  end
+
+  def fetch_count c_id
+    redis.get(c_id)
   end
 end
 
@@ -221,6 +235,8 @@ class OnMemory
   end
 
   def add user_id, candidate_id, keyword
+    candidate_id = candidate_id.to_i
+    user_id = user_id.to_i
     @votes << {
       user_id: user_id,
       candidate_id: candidate_id,
@@ -252,6 +268,7 @@ class OnMemory
   end
 
   def fetch_vote_count candidate_id
+    candidate_id = candidate_id.to_i
     return 0 if @votes_candidate[candidate_id].nil?
     total_count = 0
     @votes_candidate[candidate_id].each do |key, count|
