@@ -182,8 +182,10 @@ SQL
     #TODO: ここ id で fetch できないかな？
     candidate = db.xquery('SELECT * FROM candidates WHERE name = ?', params[:candidate]).first
 
-    voted_count =
-      user.nil? ? 0 : db.xquery('SELECT COUNT(id) AS count FROM votes WHERE user_id = ?', user[:id]).first[:count]
+    voted_count = fetch_count_user user[:id]
+    voted_count = 0 if voted_count.nil?
+    #voted_count =
+    #  user.nil? ? 0 : db.xquery('SELECT COUNT(id) AS count FROM votes WHERE user_id = ?', user[:id]).first[:count]
 
     candidates = db.query('SELECT name FROM candidates')
     if user.nil?
@@ -201,6 +203,7 @@ SQL
     params[:vote_count].to_i.times do
       OnMemory.instance.add user[:id], candidate[:id], params[:keyword]
       countup candidate[:id]
+      countup_user user[:id]
       result = db.xquery('INSERT INTO votes (user_id, candidate_id, keyword) VALUES (?, ?, ?)',
                 user[:id],
                 candidate[:id],
@@ -220,6 +223,16 @@ SQL
 
   def fetch_count c_id
     redis.get(c_id)
+  end
+
+  def countup_user u_id
+    u_id = "u_#{u_id}"
+    redis.incr(u_id)
+  end
+
+  def fetch_count_user u_id
+    u_id = "u_#{u_id}"
+    redis.get(u_id)
   end
 end
 
