@@ -1,6 +1,7 @@
 GEM
   remote: https://rubygems.org/
   specs:
+    dalli (2.7.10)
     erubis (2.7.0)
     kgio (2.10.0)
     mysql2 (0.4.4)
@@ -25,6 +26,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  dalli
   erubis
   mysql2
   mysql2-cs-bind

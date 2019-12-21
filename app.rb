@@ -3,6 +3,7 @@ require 'sinatra/base'
 require 'mysql2'
 require 'mysql2-cs-bind'
 require 'erubis'
+require 'dalli'
 
 module Ishocon2
   class AuthenticationError < StandardError; end
@@ -15,6 +16,9 @@ class Ishocon2::WebApp < Sinatra::Base
   set :erb, escape_html: true
   set :public_folder, File.expand_path('../public', __FILE__)
   set :protection, true
+
+  options = { :namespace => "app_v1", :compress => true }
+  dc = Dalli::Client.new('localhost:11211', options)
 
   helpers do
     def config
@@ -103,7 +107,11 @@ SQL
 
   get '/candidates/:id' do
     cache_control :public, :max_age => 86400
-    candidate = db.xquery('SELECT political_party, name, sex FROM candidates WHERE id = ?', params[:id]).first
+    candidate = dc.get("candidate_#{params[:id]}")
+    if candidate.nil?
+      candidate = db.xquery('SELECT political_party, name, sex FROM candidates WHERE id = ?', params[:id]).first
+      dc.set("candidate_#{params[:id]}", candidate)
+    end
     return redirect '/' if candidate.nil?
     votes = db.xquery('SELECT COUNT(candidate_id) AS count FROM votes WHERE candidate_id = ?', params[:id]).first[:count]
     keywords = voice_of_supporter([params[:id]])
