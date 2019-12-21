@@ -69,6 +69,11 @@ SQL
     end
 
     def voice_of_supporter(candidate_ids)
+      total_keywords = {}
+      candidate_ids.each do |c_id|
+        keywords = fetch_keyword_count c_id
+        p keywords
+      end
       #OnMemory.instance.fetch_top10(candidate_ids)
       query = <<SQL
 SELECT keyword
@@ -204,6 +209,7 @@ SQL
       #OnMemory.instance.add user[:id], candidate[:id], params[:keyword]
       countup candidate[:id]
       countup_user user[:id]
+      countup_keyword candidate[:id], params[:keyword]
       result = db.xquery('INSERT INTO votes (user_id, candidate_id, keyword) VALUES (?, ?, ?)',
                 user[:id],
                 candidate[:id],
@@ -233,6 +239,16 @@ SQL
   def fetch_count_user u_id
     u_id = "u_#{u_id}"
     redis.get(u_id)
+  end
+
+  def countup_keyword c_id, keyword
+    key = "c_key_#{c_id}"
+    redis.zincrby key, 1, keyword
+  end
+
+  def fetch_keyword_count c_id
+    key = "c_key_#{c_id}"
+    redis.revrange key, 0, 9
   end
 end
 
