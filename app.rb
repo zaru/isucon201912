@@ -136,7 +136,8 @@ SQL
 
     votes = dc.get("candidate_votes_#{params[:id]}")
     if votes.nil?
-      votes = db.xquery('SELECT COUNT(candidate_id) AS count FROM votes WHERE candidate_id = ?', params[:id]).first[:count]
+      votes = OnMemory.instance.fetch_vote_count params[:id]
+      #votes = db.xquery('SELECT COUNT(candidate_id) AS count FROM votes WHERE candidate_id = ?', params[:id]).first[:count]
       dc.set("candidate_votes_#{params[:id]}", votes)
     end
     keywords = voice_of_supporter([params[:id]])
@@ -173,6 +174,7 @@ SQL
                      params[:mynumber]).first
     #TODO: ここ id で fetch できないかな？
     candidate = db.xquery('SELECT * FROM candidates WHERE name = ?', params[:candidate]).first
+
     voted_count =
       user.nil? ? 0 : db.xquery('SELECT COUNT(id) AS count FROM votes WHERE user_id = ?', user[:id]).first[:count]
 
@@ -247,5 +249,14 @@ class OnMemory
     end
     sorted = keywords.sort_by { |_, v| v }.reverse.to_h
     sorted.take(10)
+  end
+
+  def fetch_vote_count candidate_id
+    return 0 if @votes_candidate[candidate_id].nil?
+    total_count = 0
+    @votes_candidate[candidate_id].each do |key, count|
+      total_count += count
+    end
+    total_count
   end
 end
