@@ -4,6 +4,7 @@ require 'mysql2'
 require 'mysql2-cs-bind'
 require 'erubis'
 require 'dalli'
+require 'socket'
 
 module Ishocon2
   class AuthenticationError < StandardError; end
@@ -75,7 +76,19 @@ SQL
     end
 
     def db_initialize
+
       db.query('DELETE FROM votes')
+    end
+
+    def memcache_flush
+      server  = '127.0.0.1'
+      port    = 11211
+      command = "flush_all\r\n"
+
+      socket = TCPSocket.new(server, port)
+      socket.write(command)
+      result = socket.recv(2)
+      socket.close
     end
   end
 
