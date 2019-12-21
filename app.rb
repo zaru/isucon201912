@@ -179,7 +179,12 @@ SQL
 
     candidates = db.query('SELECT name FROM candidates')
     if user.nil?
-      return erb :vote, locals: { candidates: candidates, message: '個人情報に誤りがあります' }
+      view = redis.get('vote_err_1')
+      if view.nil?
+        view = erb :vote, locals: { candidates: candidates, message: '個人情報に誤りがあります' }
+        redis.set('vote_err_1', view)
+      end
+      return view
     elsif user[:votes] < (params[:vote_count].to_i + voted_count.to_i)
       return erb :vote, locals: { candidates: candidates, message: '投票数が上限を超えています' }
     elsif params[:candidate].nil? || params[:candidate] == ''
