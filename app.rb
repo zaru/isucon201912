@@ -233,7 +233,7 @@ SQL
   end
 
   def fetch_candidates
-    @candidates ||= db.query('SELECT name FROM candidates')
+    @@candidates ||= db.query('SELECT name FROM candidates')
   end
 
   def countup c_id
