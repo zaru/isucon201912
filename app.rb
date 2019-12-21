@@ -69,16 +69,16 @@ SQL
     end
 
     def voice_of_supporter(candidate_ids)
-      OnMemory.instance.fetch_top10(candidate_ids)
-#      query = <<SQL
-#SELECT keyword
-#FROM votes
-#WHERE candidate_id IN (?)
-#GROUP BY keyword
-#ORDER BY COUNT(*) DESC
-#LIMIT 10
-#SQL
-#      db.xquery(query, candidate_ids).map { |a| a[:keyword] }
+      #OnMemory.instance.fetch_top10(candidate_ids)
+      query = <<SQL
+SELECT keyword
+FROM votes
+WHERE candidate_id IN (?)
+GROUP BY keyword
+ORDER BY COUNT(*) DESC
+LIMIT 10
+SQL
+      db.xquery(query, candidate_ids).map { |a| a[:keyword] }
     end
 
     def db_initialize
@@ -190,7 +190,7 @@ SQL
     candidates = db.query('SELECT name FROM candidates')
     if user.nil?
       return erb :vote, locals: { candidates: candidates, message: '個人情報に誤りがあります' }
-    elsif user[:votes] < (params[:vote_count].to_i + voted_count)
+    elsif user[:votes] < (params[:vote_count].to_i + voted_count.to_i)
       return erb :vote, locals: { candidates: candidates, message: '投票数が上限を超えています' }
     elsif params[:candidate].nil? || params[:candidate] == ''
       return erb :vote, locals: { candidates: candidates, message: '候補者を記入してください' }
@@ -201,7 +201,7 @@ SQL
     end
 
     params[:vote_count].to_i.times do
-      OnMemory.instance.add user[:id], candidate[:id], params[:keyword]
+      #OnMemory.instance.add user[:id], candidate[:id], params[:keyword]
       countup candidate[:id]
       countup_user user[:id]
       result = db.xquery('INSERT INTO votes (user_id, candidate_id, keyword) VALUES (?, ?, ?)',
