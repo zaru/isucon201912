@@ -145,10 +145,13 @@ SQL
   end
 
   post '/vote' do
-    user = redis.get("user_#{params[:mynumber]}")
+    user = redis.get("user_#{params[:name]}#{params[:address]}#{params[:mynumber]}")
     if user.nil?
-      user = db.xquery('SELECT * FROM users WHERE mynumber = ? limit 1', params[:mynumber]).first
-      redis.set("user_#{params[:mynumber]}", user)
+      user = db.xquery('SELECT * FROM users WHERE  name = ? AND address = ? AND mynumber = ? limit 1',
+                       params[:name],
+                       params[:address],
+                       params[:mynumber]).first
+      redis.set("user_#{params[:name]}#{params[:address]}#{params[:mynumber]}", user)
     end
 
     #TODO: ここ id で fetch できないかな？
