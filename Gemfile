@@ -4,6 +4,6 @@ gem 'sinatra'
 gem 'mysql2'
 gem 'mysql2-cs-bind'
 gem 'erubis'
-gem 'unicorn'
 gem 'rack-cache'
 gem 'redis'
+gem "puma"
