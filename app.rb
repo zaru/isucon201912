@@ -145,12 +145,18 @@ SQL
   end
 
   post '/vote' do
-    user = db.xquery('SELECT * FROM users WHERE name = ? AND address = ? AND mynumber = ?',
-                     params[:name],
-                     params[:address],
-                     params[:mynumber]).first
+    user = redis.get("user_#{params[:mynumber]}")
+    if user.nil?
+      user = db.xquery('SELECT * FROM users WHERE mynumber = ? limit 1', params[:mynumber]).first
+      redis.set("user_#{params[:mynumber]}", user)
+    end
+
     #TODO: ここ id で fetch できないかな？
-    candidate = db.xquery('SELECT * FROM candidates WHERE name = ? limit 1', params[:candidate]).first
+    candidate = redis.get("candidate_fetch_#{params[:candidate]}")
+    if candidate.nil?
+      candidate = db.xquery('SELECT * FROM candidates WHERE name = ? limit 1', params[:candidate]).first
+      redis.set("candidate_fetch_#{params[:candidate]}", candidate)
+    end
 
     voted_count = user.nil? ? 0 : fetch_count_user(user[:id])
     voted_count = 0 if voted_count.nil?
