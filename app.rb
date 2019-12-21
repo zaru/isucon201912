@@ -76,7 +76,7 @@ SQL
   end
 
   get '/' do
-	  cache_control :public, :max_age => 86400
+    cache_control :public, :max_age => 86400
     candidates = []
     results = election_results
     results.each_with_index do |r, i|
@@ -102,6 +102,7 @@ SQL
   end
 
   get '/candidates/:id' do
+    cache_control :public, :max_age => 86400
     candidate = db.xquery('SELECT political_party, name, sex FROM candidates WHERE id = ?', params[:id]).first
     return redirect '/' if candidate.nil?
     votes = db.xquery('SELECT COUNT(candidate_id) AS count FROM votes WHERE candidate_id = ?', params[:id]).first[:count]
@@ -112,6 +113,7 @@ SQL
   end
 
   get '/political_parties/:name' do
+    cache_control :public, :max_age => 86400
     votes = 0
     election_results.each do |r|
       votes += r[:count] || 0 if r[:political_party] == params[:name]
@@ -126,6 +128,7 @@ SQL
   end
 
   get '/vote' do
+    cache_control :public, :max_age => 86400
     candidates = db.query('SELECT * FROM candidates')
     erb :vote, locals: { candidates: candidates, message: '' }
   end
