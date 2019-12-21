@@ -152,7 +152,7 @@ SQL
 #    end
 #
 
-    candidates = users + fetch_top_c_id_last
+    candidates = users + [fetch_top_c_id_last]
     results = election_results
     results.each_with_index do |r, i|
       # 上位10人と最下位のみ表示
