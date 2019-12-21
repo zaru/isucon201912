@@ -86,9 +86,7 @@ SQL
 
     def db_initialize
       clear_nginx_cache
-      memcache_flush
       #db.query('DELETE FROM votes')
-      OnMemory.instance.clear
       redis.flushdb
     end
 
@@ -323,63 +321,5 @@ SQL
   end
   def fetch_top_sex
     redis.zrevrange "s_all_key", 0, 100
-  end
-end
-
-require 'singleton'
-class OnMemory
-  include Singleton
-
-  def initialize
-    @votes = []
-    @votes_candidate = {}
-  end
-
-  def clear
-    @votes = []
-    @votes_candidate = {}
-  end
-
-  def add user_id, candidate_id, keyword
-    candidate_id = candidate_id.to_i
-    user_id = user_id.to_i
-    @votes << {
-      user_id: user_id,
-      candidate_id: candidate_id,
-      keyword: keyword
-    }
-    if @votes_candidate[candidate_id].nil?
-      @votes_candidate[candidate_id] = {}
-    end
-    if @votes_candidate[candidate_id][keyword].nil?
-      @votes_candidate[candidate_id][keyword] = 1
-    else
-      @votes_candidate[candidate_id][keyword] += 1
-    end
-  end
-
-  def fetch_top10 candidate_ids
-    keywords = {}
-    candidate_ids.each do |c_id|
-      next if @votes_candidate[c_id].nil?
-      @votes_candidate[c_id].each do |key, count|
-        if keywords[key].nil?
-          keywords[key] = 0
-        end
-        keywords[key] += count
-      end
-    end
-    sorted = keywords.sort_by { |_, v| v }.reverse.to_h
-    sorted.take(10)
-  end
-
-  def fetch_vote_count candidate_id
-    candidate_id = candidate_id.to_i
-    return 0 if @votes_candidate[candidate_id].nil?
-    total_count = 0
-    @votes_candidate[candidate_id].each do |key, count|
-      total_count += count
-    end
-    total_count
   end
 end
