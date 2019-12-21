@@ -7,3 +7,4 @@ gem 'erubis'
 gem 'rack-cache'
 gem 'redis'
 gem "puma"
+gem 'active_support'

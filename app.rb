@@ -5,6 +5,8 @@ require 'mysql2-cs-bind'
 require 'erubis'
 require "redis"
 require 'json'
+require 'active_support'
+require 'active_support/core_ext'
 
 module Ishocon2
   class AuthenticationError < StandardError; end
@@ -155,7 +157,7 @@ SQL
 
       redis.set("user_#{params[:name]}#{params[:address]}#{params[:mynumber]}", user.to_json)
     else
-      user = JSON.parse(user)
+      user = JSON.parse(user).with_indifferent_access
     end
 
     #TODO: ここ id で fetch できないかな？
@@ -164,7 +166,7 @@ SQL
       candidate = db.xquery('SELECT * FROM candidates WHERE name = ? limit 1', params[:candidate]).first
       redis.set("candidate_fetch_#{params[:candidate]}", candidate.to_json)
     else
-      candidate = JSON.parse(candidate)
+      candidate = JSON.parse(candidate).with_indifferent_access
     end
 
     voted_count = user.nil? ? 0 : fetch_count_user(user[:id])
