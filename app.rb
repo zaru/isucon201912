@@ -80,6 +80,7 @@ SQL
       clear_nginx_cache
       memcache_flush
       db.query('DELETE FROM votes')
+      OnMemory.instance.clear
     end
 
     def memcache_flush
@@ -211,6 +212,12 @@ class OnMemory
     @votes = []
     @votes_candidate = {}
   end
+
+  def clear
+    @votes = []
+    @votes_candidate = {}
+  end
+
   def add user_id, candidate_id, keyword
     @votes << {
       user_id: user_id,
@@ -219,6 +226,8 @@ class OnMemory
     }
     if @votes_candidate[candidate_id].nil?
       @votes_candidate[candidate_id] = {}
+    end
+    if @votes_candidate[candidate_id][keyword].nil?
       @votes_candidate[candidate_id][keyword] = 1
     else
       @votes_candidate[candidate_id][keyword] += 1
@@ -228,6 +237,7 @@ class OnMemory
   def fetch_top10 candidate_ids
     keywords = {}
     candidate_ids.each do |c_id|
+      next if @votes_candidate[c_id].nil?
       @votes_candidate[c_id].each do |key, count|
         if keywords[key].nil?
           keywords[key] = 0
