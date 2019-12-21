@@ -19,7 +19,7 @@ class Ishocon2::WebApp < Sinatra::Base
   set :erb, escape_html: true
   set :public_folder, File.expand_path('../public', __FILE__)
   set :protection, true
-  set :server, :puma
+  #set :server, :puma
 
 
 

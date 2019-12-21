@@ -6,5 +6,5 @@ gem 'mysql2-cs-bind'
 gem 'erubis'
 gem 'rack-cache'
 gem 'redis'
-gem "puma"
+gem "unicorn"
 gem 'activesupport'
