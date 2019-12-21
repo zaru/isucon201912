@@ -134,7 +134,7 @@ SQL
     users.sort_by! { |a| a[:count] }.reverse!
 
     candidates = users + [fetch_top_c_id_last]
-    results = election_results
+    #results = election_results
     #results.each_with_index do |r, i|
       # 上位10人と最下位のみ表示
       #candidates.push(r) if i < 10 || 28 < i
@@ -143,18 +143,22 @@ SQL
     parties_set = db.query('SELECT political_party FROM candidates GROUP BY political_party')
     parties = {}
     parties_set.each { |a| parties[a[:political_party]] = 0 }
-    results.each do |r|
-      #parties[r[:political_party]] += r[:count] || 0
-    end
+    #results.each do |r|
+    #  #parties[r[:political_party]] += r[:count] || 0
+    #end
 
     parties_rank = fetch_top_parties
     parties_rank.each do |r|
-      parties[r] += get_parties(r) || 0
+      parties[r] += get_parties(r).to_i || 0
     end
 
     sex_ratio = { '男': 0, '女': 0 }
-    results.each do |r|
-      sex_ratio[r[:sex].to_sym] += r[:count] || 0
+    #results.each do |r|
+    #  #sex_ratio[r[:sex].to_sym] += r[:count] || 0
+    #end
+    sex_rank = fetch_top_sex
+    sex_rank.each do |r|
+      sex_ratio[r.to_sym] += get_sex(r).to_i || 0
     end
 
     erb :index, locals: { candidates: candidates,
