@@ -133,37 +133,23 @@ SQL
     end
     users.sort_by! { |a| a[:count] }.reverse!
 
-#    last_ids = fetch_top_c_id_last
-#    last_users = []
-#    if last_ids.size > 0
-#    query = <<SQL
-#SELECT id, name, political_party, sex
-#FROM candidates
-#WHERE id IN (?)
-#SQL
-#    c_users = db.xquery(query, last_ids)
-#    c_users.each do |data|
-#      last_users << data
-#    end
-#    last_users.each_with_index do |val, index|
-#      last_users[index][:count] = fetch_count(val[:id])
-#    end
-#    last_users.sort_by! { |a| a[:count] }.reverse!
-#    end
-#
-
     candidates = users + [fetch_top_c_id_last]
     results = election_results
-    results.each_with_index do |r, i|
+    #results.each_with_index do |r, i|
       # 上位10人と最下位のみ表示
       #candidates.push(r) if i < 10 || 28 < i
-    end
+    #end
 
     parties_set = db.query('SELECT political_party FROM candidates GROUP BY political_party')
     parties = {}
     parties_set.each { |a| parties[a[:political_party]] = 0 }
     results.each do |r|
-      parties[r[:political_party]] += r[:count] || 0
+      #parties[r[:political_party]] += r[:count] || 0
+    end
+
+    parties_rank = fetch_top_parties
+    parties_rank.each do |r|
+      parties[r] += get_parties(r) || 0
     end
 
     sex_ratio = { '男': 0, '女': 0 }
@@ -251,6 +237,10 @@ SQL
       countup_user user[:id]
       countup_keyword candidate[:id], params[:keyword]
       countup_c_id candidate[:id]
+      countup_parties candidate[:political_party]
+      countup_sex candidate[:sex]
+      countup_rank_parties candidate[:political_party]
+      countup_rank_sex  candidate[:sex]
       result = db.xquery('INSERT INTO votes (user_id, candidate_id, keyword) VALUES (?, ?, ?)',
                 user[:id],
                 candidate[:id],
@@ -306,6 +296,37 @@ order by id asc
 limit 1
 SQL
     db.xquery(query, all).first
+  end
+
+  def countup_parties parties
+    key = "p_key_#{parties}"
+    redis.incr key
+  end
+  def countup_sex sex
+    key = "s_key_#{sex}"
+    redis.incr key
+  end
+  def get_parties parties
+    key = "p_key_#{parties}"
+    redis.get key
+  end
+  def get_sex parties
+    key = "s_key_#{parties}"
+    redis.get key
+  end
+  def countup_rank_parties parties
+    key = "p_all_key"
+    redis.zincrby key, 1, parties
+  end
+  def countup_rank_sex sex
+    key = "s_all_key"
+    redis.zincrby key, 1, sex
+  end
+  def fetch_top_parties
+    redis.zrevrange "p_all_key", 0, 100
+  end
+  def fetch_top_sex
+    redis.zrevrange "s_all_key", 0, 100
   end
 end
 
