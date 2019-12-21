@@ -124,7 +124,7 @@ SQL
   end
 
   get '/vote' do
-    candidates = db.query('SELECT * FROM candidates')
+    candidates = db.query('SELECT name FROM candidates')
     erb :vote, locals: { candidates: candidates, message: '' }
   end
 
