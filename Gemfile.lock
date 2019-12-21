@@ -7,6 +7,8 @@ GEM
     mysql2-cs-bind (0.0.6)
       mysql2
     rack (1.6.10)
+    rack-cache (1.10.0)
+      rack (>= 0.4)
     rack-protection (1.5.5)
       rack
     raindrops (0.16.0)
@@ -26,8 +28,9 @@ DEPENDENCIES
   erubis
   mysql2
   mysql2-cs-bind
+  rack-cache
   sinatra
   unicorn
 
 BUNDLED WITH
-   1.16.1
+   1.16.2
