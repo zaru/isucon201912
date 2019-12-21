@@ -177,7 +177,7 @@ SQL
     voted_count = user.nil? ? 0 : fetch_count_user(user[:id])
     voted_count = 0 if voted_count.nil?
 
-    candidates = db.query('SELECT name FROM candidates')
+    candidates = fetch_candidates
     if user.nil?
       view = redis.get('vote_err_1')
       if view.nil?
@@ -186,13 +186,33 @@ SQL
       end
       return view
     elsif user[:votes] < (params[:vote_count].to_i + voted_count.to_i)
-      return erb :vote, locals: { candidates: candidates, message: '投票数が上限を超えています' }
+      view = redis.get('vote_err_2')
+      if view.nil?
+        view = erb :vote, locals: { candidates: candidates, message: '投票数が上限を超えています' }
+        redis.set('vote_err_1', view)
+      end
+      return view
     elsif params[:candidate].nil? || params[:candidate] == ''
-      return erb :vote, locals: { candidates: candidates, message: '候補者を記入してください' }
+      view = redis.get('vote_err_3')
+      if view.nil?
+        view = erb :vote, locals: { candidates: candidates, message: '候補者を記入してください' }
+        redis.set('vote_err_1', view)
+      end
+      return view
     elsif candidate.nil?
-      return erb :vote, locals: { candidates: candidates, message: '候補者を正しく記入してください' }
+      view = redis.get('vote_err_4')
+      if view.nil?
+        view = erb :vote, locals: { candidates: candidates, message: '候補者を正しく記入してください' }
+        redis.set('vote_err_1', view)
+      end
+      return view
     elsif params[:keyword].nil? || params[:keyword] == ''
-      return erb :vote, locals: { candidates: candidates, message: '投票理由を記入してください' }
+      view = redis.get('vote_err_5')
+      if view.nil?
+        view = erb :vote, locals: { candidates: candidates, message: '投票理由を記入してください' }
+        redis.set('vote_err_1', view)
+      end
+      return view
     end
 
     params[:vote_count].to_i.times do
@@ -210,6 +230,10 @@ SQL
 
   get '/initialize' do
     db_initialize
+  end
+
+  def fetch_candidates
+    @candidates ||= db.query('SELECT name FROM candidates')
   end
 
   def countup c_id
