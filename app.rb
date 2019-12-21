@@ -202,7 +202,12 @@ SQL
     countup_sex candidate[:sex], count
     countup_rank_parties candidate[:political_party], count
     countup_rank_sex  candidate[:sex], count
-    return erb :vote, locals: { candidates: candidates, message: '投票に成功しました' }
+    view = redis.get('vote_success')
+    if view.nil?
+      view = erb :vote, locals: { candidates: candidates, message: '投票に成功しました' }
+      redis.set('vote_success', view)
+    end
+    return view
   end
 
   get '/initialize' do
