@@ -80,7 +80,7 @@ SQL
   end
 
   get '/' do
-    cache_control :public, :max_age => 86400
+    #cache_control :public, :max_age => 86400
     candidates = []
     results = election_results
     results.each_with_index do |r, i|
@@ -113,7 +113,12 @@ SQL
       dc.set("candidate_#{params[:id]}", candidate)
     end
     return redirect '/' if candidate.nil?
-    votes = db.xquery('SELECT COUNT(candidate_id) AS count FROM votes WHERE candidate_id = ?', params[:id]).first[:count]
+
+    votes = dc.get("candidate_votes_#{params[:id]}")
+    if votes.nil?
+      votes = db.xquery('SELECT COUNT(candidate_id) AS count FROM votes WHERE candidate_id = ?', params[:id]).first[:count]
+      dc.set("candidate_votes_#{params[:id]}", votes)
+    end
     keywords = voice_of_supporter([params[:id]])
     erb :candidate, locals: { candidate: candidate,
                               votes: votes,
