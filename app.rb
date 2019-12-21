@@ -64,15 +64,16 @@ SQL
     end
 
     def voice_of_supporter(candidate_ids)
-      query = <<SQL
-SELECT keyword
-FROM votes
-WHERE candidate_id IN (?)
-GROUP BY keyword
-ORDER BY COUNT(*) DESC
-LIMIT 10
-SQL
-      db.xquery(query, candidate_ids).map { |a| a[:keyword] }
+      OnMemory.instance.fetch_top10(candidate_ids)
+#      query = <<SQL
+#SELECT keyword
+#FROM votes
+#WHERE candidate_id IN (?)
+#GROUP BY keyword
+#ORDER BY COUNT(*) DESC
+#LIMIT 10
+#SQL
+#      db.xquery(query, candidate_ids).map { |a| a[:keyword] }
     end
 
     def db_initialize
@@ -169,6 +170,7 @@ SQL
                      params[:name],
                      params[:address],
                      params[:mynumber]).first
+    #TODO: ここ id で fetch できないかな？
     candidate = db.xquery('SELECT * FROM candidates WHERE name = ?', params[:candidate]).first
     voted_count =
       user.nil? ? 0 : db.xquery('SELECT COUNT(id) AS count FROM votes WHERE user_id = ?', user[:id]).first[:count]
@@ -187,6 +189,7 @@ SQL
     end
 
     params[:vote_count].to_i.times do
+      OnMemory.instance.add user[:id], candidate[:id], params[:keyword]
       result = db.xquery('INSERT INTO votes (user_id, candidate_id, keyword) VALUES (?, ?, ?)',
                 user[:id],
                 candidate[:id],
@@ -197,5 +200,42 @@ SQL
 
   get '/initialize' do
     db_initialize
+  end
+end
+
+require 'singleton'
+class OnMemory
+  include Singleton
+
+  def initialize
+    @votes = []
+    @votes_candidate = {}
+  end
+  def add user_id, candidate_id, keyword
+    @votes << {
+      user_id: user_id,
+      candidate_id: candidate_id,
+      keyword: keyword
+    }
+    if @votes_candidate[candidate_id].nil?
+      @votes_candidate[candidate_id] = {}
+      @votes_candidate[candidate_id][keyword] = 1
+    else
+      @votes_candidate[candidate_id][keyword] += 1
+    end
+  end
+
+  def fetch_top10 candidate_ids
+    keywords = {}
+    candidate_ids.each do |c_id|
+      @votes_candidate[c_id].each do |key, count|
+        if keywords[key].nil?
+          keywords[key] = 0
+        end
+        keywords[key] += count
+      end
+    end
+    sorted = keywords.sort_by { |_, v| v }.reverse.to_h
+    sorted.take(10)
   end
 end
