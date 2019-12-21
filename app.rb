@@ -4,6 +4,7 @@ require 'mysql2'
 require 'mysql2-cs-bind'
 require 'erubis'
 require "redis"
+require 'json'
 
 module Ishocon2
   class AuthenticationError < StandardError; end
@@ -152,18 +153,18 @@ SQL
                        params[:address],
                        params[:mynumber]).first
 
-      redis.set("user_#{params[:name]}#{params[:address]}#{params[:mynumber]}", Marshal.dump(user))
+      redis.set("user_#{params[:name]}#{params[:address]}#{params[:mynumber]}", user.to_json)
     else
-      user = Marshal.load(user)
+      user = JSON.parse(user)
     end
 
     #TODO: ここ id で fetch できないかな？
     candidate = redis.get("candidate_fetch_#{params[:candidate]}")
     if candidate.nil? || candidate.empty?
       candidate = db.xquery('SELECT * FROM candidates WHERE name = ? limit 1', params[:candidate]).first
-      redis.set("candidate_fetch_#{params[:candidate]}", Marshal.dump(candidate))
+      redis.set("candidate_fetch_#{params[:candidate]}", candidate.to_json)
     else
-      candidate = Marshal.load(candidate)
+      candidate = JSON.parse(candidate)
     end
 
     voted_count = user.nil? ? 0 : fetch_count_user(user[:id])
