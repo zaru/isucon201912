@@ -129,12 +129,12 @@ SQL
 
   get '/vote' do
     cache_control :public, :max_age => 86400
-    candidates = db.query('SELECT * FROM candidates')
+    candidates = db.query('SELECT name FROM candidates')
     erb :vote, locals: { candidates: candidates, message: '' }
   end
 
   post '/vote' do
-    user = db.xquery('SELECT id FROM users WHERE name = ? AND address = ? AND mynumber = ?',
+    user = db.xquery('SELECT * FROM users WHERE name = ? AND address = ? AND mynumber = ?',
                      params[:name],
                      params[:address],
                      params[:mynumber]).first
@@ -142,7 +142,7 @@ SQL
     voted_count =
       user.nil? ? 0 : db.xquery('SELECT COUNT(id) AS count FROM votes WHERE user_id = ?', user[:id]).first[:count]
 
-    candidates = db.query('SELECT * FROM candidates')
+    candidates = db.query('SELECT name FROM candidates')
     if user.nil?
       return erb :vote, locals: { candidates: candidates, message: '個人情報に誤りがあります' }
     elsif user[:votes] < (params[:vote_count].to_i + voted_count)
