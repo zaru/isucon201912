@@ -131,6 +131,7 @@ SQL
     users.each_with_index do |val, index|
       users[index][:count] = fetch_count(val[:id])
     end
+    users.sort_by! { |a| a[:count] }.reverse!
 
     last_ids = fetch_top_c_id_last
     query = <<SQL
@@ -139,21 +140,20 @@ FROM candidates
 WHERE id IN (?)
 SQL
     c_users = db.xquery(query, last_ids)
-    users = []
+    last_users = []
     c_users.each do |data|
-      users << data
+      last_users << data
     end
-    p users
-    users.each_with_index do |val, index|
-      users[index][:count] = fetch_count(val[:id])
+    last_users.each_with_index do |val, index|
+      last_users[index][:count] = fetch_count(val[:id])
     end
+    last_users.sort_by! { |a| a[:count] }
 
-    candidates = users
-
+    candidates = users + last_users
     results = election_results
     results.each_with_index do |r, i|
       # 上位10人と最下位のみ表示
-      candidates.push(r) if i < 10 || 28 < i
+      #candidates.push(r) if i < 10 || 28 < i
     end
 
     parties_set = db.query('SELECT political_party FROM candidates GROUP BY political_party')
