@@ -24,7 +24,7 @@ class Ishocon2::WebApp < Sinatra::Base
 
 
   helpers do
-    def resid
+    def redis
       @redis_con ||= Redis.new
     end
     def config
@@ -86,6 +86,7 @@ SQL
       memcache_flush
       db.query('DELETE FROM votes')
       OnMemory.instance.clear
+      redis.flushdb
     end
 
     def memcache_flush
