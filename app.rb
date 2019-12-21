@@ -217,8 +217,8 @@ SQL
     redis.incrby c_id, count
   end
 
-  def fetch_count c_id, count
-    redis.incrby c_id, count
+  def fetch_count c_id
+    redis.get(c_id)
   end
 
   def countup_user u_id, count
