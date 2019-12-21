@@ -3,7 +3,6 @@ require 'sinatra/base'
 require 'mysql2'
 require 'mysql2-cs-bind'
 require 'erubis'
-require 'socket'
 require "redis"
 
 module Ishocon2
@@ -54,20 +53,6 @@ class Ishocon2::WebApp < Sinatra::Base
       client
     end
 
-    def election_results
-      query = <<SQL
-SELECT c.id, c.name, c.political_party, c.sex, v.count
-FROM candidates AS c
-LEFT OUTER JOIN
-  (SELECT candidate_id, COUNT(candidate_id) AS count
-  FROM votes
-  GROUP BY candidate_id) AS v
-ON c.id = v.candidate_id
-ORDER BY v.count DESC
-SQL
-      db.xquery(query)
-    end
-
     def voice_of_supporter(candidate_ids)
       keys = []
       candidate_ids.each do |c_id|
@@ -80,17 +65,6 @@ SQL
     def db_initialize
       clear_nginx_cache
       redis.flushdb
-    end
-
-    def memcache_flush
-      server  = '127.0.0.1'
-      port    = 11211
-      command = "flush_all\r\n"
-
-      socket = TCPSocket.new(server, port)
-      socket.write(command)
-      result = socket.recv(2)
-      socket.close
     end
 
     def clear_nginx_cache
