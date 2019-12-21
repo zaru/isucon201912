@@ -48,7 +48,7 @@ class Ishocon2::WebApp < Sinatra::Base
 SELECT c.id, c.name, c.political_party, c.sex, v.count
 FROM candidates AS c
 LEFT OUTER JOIN
-  (SELECT candidate_id, COUNT(*) AS count
+  (SELECT candidate_id, COUNT(candidate_id) AS count
   FROM votes
   GROUP BY candidate_id) AS v
 ON c.id = v.candidate_id
@@ -101,7 +101,7 @@ SQL
   get '/candidates/:id' do
     candidate = db.xquery('SELECT * FROM candidates WHERE id = ?', params[:id]).first
     return redirect '/' if candidate.nil?
-    votes = db.xquery('SELECT COUNT(*) AS count FROM votes WHERE candidate_id = ?', params[:id]).first[:count]
+    votes = db.xquery('SELECT COUNT(candidate_id) AS count FROM votes WHERE candidate_id = ?', params[:id]).first[:count]
     keywords = voice_of_supporter([params[:id]])
     erb :candidate, locals: { candidate: candidate,
                               votes: votes,
@@ -134,7 +134,7 @@ SQL
                      params[:mynumber]).first
     candidate = db.xquery('SELECT * FROM candidates WHERE name = ?', params[:candidate]).first
     voted_count =
-      user.nil? ? 0 : db.xquery('SELECT COUNT(*) AS count FROM votes WHERE user_id = ?', user[:id]).first[:count]
+      user.nil? ? 0 : db.xquery('SELECT COUNT(id) AS count FROM votes WHERE user_id = ?', user[:id]).first[:count]
 
     candidates = db.query('SELECT * FROM candidates')
     if user.nil?
