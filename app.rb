@@ -76,7 +76,7 @@ SQL
     end
 
     def db_initialize
-
+      memcache_flush
       db.query('DELETE FROM votes')
     end
 
