@@ -114,11 +114,26 @@ SQL
   get '/' do
     #cache_control :public, :max_age => 86400
     candidates = []
-    results = election_results
-    results.each_with_index do |r, i|
-      # 上位10人と最下位のみ表示
-      candidates.push(r) if i < 10 || 28 < i
+
+
+    top10_ids = fetch_top_c_id_top10
+    last_id = fetch_top_c_id_last
+      query = <<SQL
+SELECT id, name, political_party, sex
+FROM candidates
+WHERE candidate_id IN (?)
+SQL
+    c_users = db.xquery(query, top10_ids + last_id)
+    c_users.each_with_index do |val, index|
+      c_users[index][:count] = fetch_count(val[:id])
     end
+    candidates = c_users
+
+    results = election_results
+    #results.each_with_index do |r, i|
+    #  # 上位10人と最下位のみ表示
+    #  candidates.push(r) if i < 10 || 28 < i
+    #end
 
     parties_set = db.query('SELECT political_party FROM candidates GROUP BY political_party')
     parties = {}
@@ -211,6 +226,7 @@ SQL
       countup candidate[:id]
       countup_user user[:id]
       countup_keyword candidate[:id], params[:keyword]
+      countup_c_id candidate[:id]
       result = db.xquery('INSERT INTO votes (user_id, candidate_id, keyword) VALUES (?, ?, ?)',
                 user[:id],
                 candidate[:id],
@@ -245,6 +261,19 @@ SQL
   def countup_keyword c_id, keyword
     key = "c_key_#{c_id}"
     redis.zincrby key, 1, keyword
+  end
+
+  def countup_c_id
+    key = "c_all_key"
+    redis.zincrby key, 1, c_id
+  end
+
+  def fetch_top_c_id_top10
+    redis.zrevrange "c_all_key", 0, 9
+  end
+
+  def fetch_top_c_id_last
+    redis.zrevrange "c_all_key", -1, 1
   end
 end
 
