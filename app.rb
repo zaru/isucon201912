@@ -100,7 +100,7 @@ SQL
   end
 
   get '/candidates/:id' do
-    candidate = db.xquery('SELECT * FROM candidates WHERE id = ?', params[:id]).first
+    candidate = db.xquery('SELECT political_party, name, sex FROM candidates WHERE id = ?', params[:id]).first
     return redirect '/' if candidate.nil?
     votes = db.xquery('SELECT COUNT(candidate_id) AS count FROM votes WHERE candidate_id = ?', params[:id]).first[:count]
     keywords = voice_of_supporter([params[:id]])
@@ -129,7 +129,7 @@ SQL
   end
 
   post '/vote' do
-    user = db.xquery('SELECT * FROM users WHERE name = ? AND address = ? AND mynumber = ?',
+    user = db.xquery('SELECT id FROM users WHERE name = ? AND address = ? AND mynumber = ?',
                      params[:name],
                      params[:address],
                      params[:mynumber]).first
