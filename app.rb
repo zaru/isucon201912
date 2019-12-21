@@ -146,7 +146,7 @@ SQL
 
   post '/vote' do
     user = redis.get("user_#{params[:name]}#{params[:address]}#{params[:mynumber]}")
-    if user.nil?
+    if user.nil? || user.empty?
       user = db.xquery('SELECT * FROM users WHERE  name = ? AND address = ? AND mynumber = ?',
                        params[:name],
                        params[:address],
@@ -156,7 +156,7 @@ SQL
 
     #TODO: ここ id で fetch できないかな？
     candidate = redis.get("candidate_fetch_#{params[:candidate]}")
-    if candidate.nil?
+    if candidate.nil? || candidate.empty?
       candidate = db.xquery('SELECT * FROM candidates WHERE name = ? limit 1', params[:candidate]).first
       redis.set("candidate_fetch_#{params[:candidate]}", candidate)
     end
