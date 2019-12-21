@@ -71,22 +71,11 @@ SQL
         keys << "c_key_#{c_id}"
       end
       redis.zunionstore("c_ids_#{candidate_ids.join('-')}", keys)
-      return redis.zrevrange "c_ids_#{candidate_ids.join('-')}", 0, 9
-      #OnMemory.instance.fetch_top10(candidate_ids)
-#      query = <<SQL
-#SELECT keyword
-#FROM votes
-#WHERE candidate_id IN (?)
-#GROUP BY keyword
-#ORDER BY COUNT(*) DESC
-#LIMIT 10
-#SQL
-#      db.xquery(query, candidate_ids).map { |a| a[:keyword] }
+      redis.zrevrange "c_ids_#{candidate_ids.join('-')}", 0, 9
     end
 
     def db_initialize
       clear_nginx_cache
-      #db.query('DELETE FROM votes')
       redis.flushdb
     end
 
@@ -107,10 +96,6 @@ SQL
   end
 
   get '/' do
-    #cache_control :public, :max_age => 86400
-    candidates = []
-
-
     top10_ids = fetch_top_c_id_top10
 
     query = <<SQL
@@ -129,18 +114,10 @@ SQL
     users.sort_by! { |a| a[:count] }.reverse!
 
     candidates = users + [fetch_top_c_id_last]
-    #results = election_results
-    #results.each_with_index do |r, i|
-      # 上位10人と最下位のみ表示
-      #candidates.push(r) if i < 10 || 28 < i
-    #end
 
     parties_set = db.query('SELECT political_party FROM candidates GROUP BY political_party')
     parties = {}
     parties_set.each { |a| parties[a[:political_party]] = 0 }
-    #results.each do |r|
-    #  #parties[r[:political_party]] += r[:count] || 0
-    #end
 
     parties_rank = fetch_top_parties
     parties_rank.each do |r|
@@ -148,9 +125,6 @@ SQL
     end
 
     sex_ratio = { '男': 0, '女': 0 }
-    #results.each do |r|
-    #  #sex_ratio[r[:sex].to_sym] += r[:count] || 0
-    #end
     sex_rank = fetch_top_sex
     sex_rank.each do |r|
       sex_ratio[r.to_sym] += get_sex(r).to_i || 0
@@ -166,9 +140,7 @@ SQL
     candidate = db.xquery('SELECT political_party, name, sex FROM candidates WHERE id = ?', params[:id]).first
     return redirect '/' if candidate.nil?
 
-    #votes = OnMemory.instance.fetch_vote_count params[:id]
     votes = fetch_count params[:id]
-    #votes = db.xquery('SELECT COUNT(candidate_id) AS count FROM votes WHERE candidate_id = ?', params[:id]).first[:count]
     keywords = voice_of_supporter([params[:id]])
     erb :candidate, locals: { candidate: candidate,
                               votes: votes,
@@ -177,13 +149,8 @@ SQL
 
   get '/political_parties/:name' do
     cache_control :public, :max_age => 86400
-    votes = 0
 
-    # 指定政党
     votes = get_parties(params[:name]).to_i || 0
-    #election_results.each do |r|
-    #  votes += r[:count] || 0 if r[:political_party] == params[:name]
-    #end
     candidates = db.xquery('SELECT id, name FROM candidates WHERE political_party = ?', params[:name])
     candidate_ids = candidates.map { |c| c[:id] }
     keywords = voice_of_supporter(candidate_ids)
@@ -209,8 +176,6 @@ SQL
 
     voted_count = user.nil? ? 0 : fetch_count_user(user[:id])
     voted_count = 0 if voted_count.nil?
-    #voted_count =
-    #  user.nil? ? 0 : db.xquery('SELECT COUNT(id) AS count FROM votes WHERE user_id = ?', user[:id]).first[:count]
 
     candidates = db.query('SELECT name FROM candidates')
     if user.nil?
@@ -226,7 +191,6 @@ SQL
     end
 
     params[:vote_count].to_i.times do
-      #OnMemory.instance.add user[:id], candidate[:id], params[:keyword]
       countup candidate[:id]
       countup_user user[:id]
       countup_keyword candidate[:id], params[:keyword]
@@ -235,10 +199,6 @@ SQL
       countup_sex candidate[:sex]
       countup_rank_parties candidate[:political_party]
       countup_rank_sex  candidate[:sex]
-      #result = db.xquery('INSERT INTO votes (user_id, candidate_id, keyword) VALUES (?, ?, ?)',
-      #          user[:id],
-      #          candidate[:id],
-      #          params[:keyword])
     end
     return erb :vote, locals: { candidates: candidates, message: '投票に成功しました' }
   end
