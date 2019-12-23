@@ -20,6 +20,9 @@ class Ishocon2::WebApp < Sinatra::Base
   set :public_folder, File.expand_path('../public', __FILE__)
   set :protection, true
   #set :server, :puma
+  #
+
+  @@bench_get_mode = false
 
 
 
@@ -66,17 +69,14 @@ class Ishocon2::WebApp < Sinatra::Base
       redis.zrevrange "c_ids_#{candidate_ids.join('-')}", 0, 9
     end
 
-    def db_initialize
-      clear_nginx_cache
-      redis.flushdb
-    end
-
     def clear_nginx_cache
       system('rm -rf /var/cache/nginx/*')
     end
   end
 
   get '/' do
+    cache_control :public, :max_age => 86400 if @@bench_get_mode
+
     top10_ids = fetch_top_c_id_top10
 
     query = <<SQL
@@ -117,6 +117,7 @@ SQL
   end
 
   get '/candidates/:id' do
+    @@bench_get_mode = true
     cache_control :public, :max_age => 86400
     candidate = db.xquery('SELECT political_party, name, sex FROM candidates WHERE id = ?', params[:id]).first
     return redirect '/' if candidate.nil?
@@ -129,6 +130,7 @@ SQL
   end
 
   get '/political_parties/:name' do
+    @@bench_get_mode = true
     cache_control :public, :max_age => 86400
 
     votes = get_parties(params[:name]).to_i || 0
@@ -236,7 +238,9 @@ SQL
   end
 
   get '/initialize' do
-    db_initialize
+    clear_nginx_cache
+    redis.flushdb
+    #set_all_candidates_ranking
   end
 
   def fetch_candidates
@@ -318,4 +322,28 @@ SQL
   def fetch_top_sex
     redis.zrevrange "s_all_key", 0, 100
   end
+
+#  def set_all_candidates_ranking
+#    all_candidates.each do |candidate|
+#      redis.zadd('c_all_key', 0, candidate[:id])
+#    end
+#  end
+#
+#  def all_candidates
+#    @@candidates ||= fetch_all_candidates
+#  end
+#
+#  def fetch_all_candidates
+#    query = <<SQL
+#SELECT id, name, political_party, sex
+#FROM candidates
+#order by id asc
+#SQL
+#    res = db.xquery(query, all)
+#    data = []
+#    res.each do |val|
+#      data << val
+#    end
+#    data
+#  end
 end
