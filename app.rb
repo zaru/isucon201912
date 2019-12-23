@@ -119,8 +119,8 @@ SQL
   get '/candidates/:id' do
     @@bench_get_mode = true
     cache_control :public, :max_age => 86400
-    candidate = db.xquery('SELECT political_party, name, sex FROM candidates WHERE id = ?', params[:id]).first
-    return redirect '/' if candidate.nil?
+    return redirect '/' if params[:id].to_i > 30
+    candidate = db.xquery('SELECT political_party, name, sex FROM candidates WHERE id = ? limit 1', params[:id]).first
 
     votes = fetch_count params[:id]
     keywords = voice_of_supporter([params[:id]])
