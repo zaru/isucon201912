@@ -5,6 +5,7 @@ require 'mysql2-cs-bind'
 require 'erubis'
 require "redis"
 require 'json'
+require 'hamlit'
 require 'active_support'
 require 'active_support/core_ext'
 
@@ -109,7 +110,7 @@ SQL
       sex_ratio[r.to_sym] += get_sex(r).to_i || 0
     end
 
-    erb :index, locals: { candidates: candidates,
+    haml  :index, locals: { candidates: candidates,
                           parties: parties,
                           sex_ratio: sex_ratio }
   end
@@ -122,7 +123,7 @@ SQL
 
     votes = fetch_count params[:id]
     keywords = voice_of_supporter([params[:id]])
-    erb :candidate, locals: { candidate: candidate,
+    haml  :candidate, locals: { candidate: candidate,
                               votes: votes,
                               keywords: keywords }
   end
@@ -135,7 +136,7 @@ SQL
     candidates = db.xquery('SELECT id, name FROM candidates WHERE political_party = ?', params[:name])
     candidate_ids = candidates.map { |c| c[:id] }
     keywords = voice_of_supporter(candidate_ids)
-    erb :political_party, locals: { political_party: params[:name],
+    haml  :political_party, locals: { political_party: params[:name],
                                     votes: votes,
                                     candidates: candidates,
                                     keywords: keywords }
@@ -146,7 +147,7 @@ SQL
     candidates = db.query('SELECT name FROM candidates')
     view = redis.get('vote_get')
     if view.nil?
-      view = erb :vote, locals: { candidates: candidates, message: '' }
+      view = haml  :vote, locals: { candidates: candidates, message: '' }
       redis.set('vote_get', view)
     end
     view
@@ -184,35 +185,35 @@ SQL
     if user.nil?
       view = redis.get('vote_err_1')
       if view.nil?
-        view = erb :vote, locals: { candidates: candidates, message: '個人情報に誤りがあります' }
+        view = haml  :vote, locals: { candidates: candidates, message: '個人情報に誤りがあります' }
         redis.set('vote_err_1', view)
       end
       return view
     elsif user[:votes] < (params[:vote_count].to_i + voted_count.to_i)
       view = redis.get('vote_err_2')
       if view.nil?
-        view = erb :vote, locals: { candidates: candidates, message: '投票数が上限を超えています' }
+        view = haml  :vote, locals: { candidates: candidates, message: '投票数が上限を超えています' }
         redis.set('vote_err_1', view)
       end
       return view
     elsif params[:candidate].nil? || params[:candidate] == ''
       view = redis.get('vote_err_3')
       if view.nil?
-        view = erb :vote, locals: { candidates: candidates, message: '候補者を記入してください' }
+        view = haml  :vote, locals: { candidates: candidates, message: '候補者を記入してください' }
         redis.set('vote_err_1', view)
       end
       return view
     elsif candidate.nil?
       view = redis.get('vote_err_4')
       if view.nil?
-        view = erb :vote, locals: { candidates: candidates, message: '候補者を正しく記入してください' }
+        view = haml  :vote, locals: { candidates: candidates, message: '候補者を正しく記入してください' }
         redis.set('vote_err_1', view)
       end
       return view
     elsif params[:keyword].nil? || params[:keyword] == ''
       view = redis.get('vote_err_5')
       if view.nil?
-        view = erb :vote, locals: { candidates: candidates, message: '投票理由を記入してください' }
+        view = haml  :vote, locals: { candidates: candidates, message: '投票理由を記入してください' }
         redis.set('vote_err_1', view)
       end
       return view
@@ -229,7 +230,7 @@ SQL
     countup_rank_sex  candidate[:sex], count
     view = redis.get('vote_success')
     if view.nil?
-      view = erb :vote, locals: { candidates: candidates, message: '投票に成功しました' }
+      view = haml  :vote, locals: { candidates: candidates, message: '投票に成功しました' }
       redis.set('vote_success', view)
     end
     return view
