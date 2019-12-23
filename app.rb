@@ -144,7 +144,12 @@ SQL
   get '/vote' do
     cache_control :public, :max_age => 86400
     candidates = db.query('SELECT name FROM candidates')
-    erb :vote, locals: { candidates: candidates, message: '' }
+    view = redis.get('vote_get')
+    if view.nil?
+      view = erb :vote, locals: { candidates: candidates, message: '' }
+      redis.set('vote_get', view)
+    end
+    view
   end
 
   post '/vote' do
