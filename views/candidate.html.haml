@@ -1,0 +1,16 @@
+.jumbotron
+  .container
+    %h1= candidate[:name]
+.container
+  .row
+    #info.jumbotron
+      %h2 得票数
+      %p#votes= votes
+      %h2 政党
+      %p#party= candidate[:political_party]
+      %h2 性別
+      %p#sex= candidate[:sex]
+      %h2 支持者の声
+      %ul#voice
+        - keywords.each do |keyword|
+          %li= keyword
